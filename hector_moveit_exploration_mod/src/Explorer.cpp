@@ -323,6 +323,7 @@ void Quadrotor::landing()
 
 void Quadrotor::gotocenter(const std::vector<double> &p1, const std::vector<double> &p2, const std::vector<double> &p3, const std::vector<double> &p4)
 {
+    ros::Rate rate(6);
     double centerRectx;
     double centerRecty;
     double centerRectz;
@@ -340,12 +341,14 @@ void Quadrotor::gotocenter(const std::vector<double> &p1, const std::vector<doub
     gotocenter_pose.orientation.w = 1;
 
     go(gotocenter_pose);
+    ros::spinOnce();
+    rate.sleep();
     ROS_INFO("Center reach");
 }
 
 std::vector<std::vector<double>> Quadrotor::findtree()
 {
-    std::vector<std::vector<double>> treepointmatrix {{{12,-12,6},{4,-12,6},{-4,-12,6},{-12,-12,6},{12,-4,6},{4,-4,6},{-4,-4,6},{-12,-4,6},{12,4,6},{4,4,6},{-4,4,6},{-12,4,6},{12,12,6},{4,12,6},{-4,12,6},{-12,12,6},}};
+    std::vector<std::vector<double>> treepointmatrix {{{12,-12,7},{4,-12,7},{-4,-12,7},{-12,-12,7},{12,-4,7},{4,-4,7},{-4,-4,7},{-12,-4,7},{12,4,7},{4,4,7},{-4,4,7},{-12,4,7},{12,12,7},{4,12,7},{-4,12,7},{-12,12,7},}};
     ROS_INFO("findtree successful");
     return treepointmatrix;
 }
@@ -360,65 +363,94 @@ std::vector<std::vector<double>> Quadrotor::computewaypoint(const std::vector<st
 
 void Quadrotor::run()
 {
-    ros::Rate rate(2);
-    while(ros::ok()){
-        std::vector<double> p1 = {-25, -15, 0};
-        std::vector<double> p2 = {-25, 15, 0};
-        std::vector<double> p3 = {25, 15, 0};
-        std::vector<double> p4 = {25, -15, 0};
-        gotocenter(p1, p2, p3, p4);
-
-        std::vector<std::vector<double>> treematrix;
-        treematrix = findtree();
-
-        std::vector<std::vector<double>> trajectorypoint;
-        trajectorypoint = computewaypoint(treematrix);
-        
+    ros::Rate rate(6);
+    ros::spinOnce();
+    rate.sleep();
+    ros::Duration(2).sleep();
     
-        while(!odom_received)
-            rate.sleep();
-        bool finish = false;
-        int i = 0;
-        
+    geometry_msgs::Pose taking_altitude;
+    taking_altitude.position.x = 20.0;
+    taking_altitude.position.y = 0.0;
+    taking_altitude.position.z = 5.0;
+    taking_altitude.orientation.w = 1;
+    go(taking_altitude);
+
+    ros::spinOnce();
+    rate.sleep();
+    ros::Duration(2).sleep();
+
+    std::vector<double> p1 = {-25, -15, 0};
+    std::vector<double> p2 = {-25, 15, 0};
+    std::vector<double> p3 = {25, 15, 0};
+    std::vector<double> p4 = {25, -15, 0};
+    gotocenter(p1, p2, p3, p4);
+
+    std::vector<std::vector<double>> treematrix;
+    treematrix = findtree();
+
+    std::vector<std::vector<double>> trajectorypoint;
+    trajectorypoint = computewaypoint(treematrix);
+    
+
+    while(!odom_received)
+        rate.sleep();
+    bool finish = false;
+    int i = 0;
+    
+    do{
         do{
-            do{
-                if(trajectorypoint.empty()) break;
-                geometry_msgs::Pose _goal;
-                _goal.position.x = trajectorypoint[i][0];
-                _goal.position.y = trajectorypoint[i][1];
-                _goal.position.z = trajectorypoint[i][2];
-                _goal.orientation.w = 1;
+            if(trajectorypoint.empty()) break;
+            geometry_msgs::Pose _goal;
+            _goal.position.x = trajectorypoint[i][0];
+            _goal.position.y = trajectorypoint[i][1];
+            _goal.position.z = trajectorypoint[i][2];
+            _goal.orientation.w = 1;
+            
+            bool invalid = false;
+            for(int i=0;i<invalid_poses.size();i++){
                 
-                bool invalid = false;
-                for(int i=0;i<invalid_poses.size();i++){
-                    
-                    if(sqrt(pow(invalid_poses[i].position.x - _goal.position.x,2) + pow(invalid_poses[i].position.y - _goal.position.y,2) 
-                        + pow(invalid_poses[i].position.z - _goal.position.z,2)) < 1.5){
-                        invalid = true;
-                        invalid_poses.push_back(_goal);
-                        break;
-                    }
+                if(sqrt(pow(invalid_poses[i].position.x - _goal.position.x,2) + pow(invalid_poses[i].position.y - _goal.position.y,2) 
+                    + pow(invalid_poses[i].position.z - _goal.position.z,2)) < 1.5){
+                    invalid = true;
+                    invalid_poses.push_back(_goal);
+                    break;
                 }
-                if(invalid) continue;
+            }
+            if(invalid) continue;
 
-                finish = go(_goal);
-                if(!finish) invalid_poses.push_back(_goal);
-                else{
-                    double xspan = XMAX-XMIN;
-                    double yspan = YMAX-YMIN;
-                    int xpatch = (_goal.position.x - XMIN)*GRID/xspan;
-                    int ypatch = (_goal.position.y - YMIN)*GRID/yspan;
-                    patches[xpatch][ypatch]++;
+            finish = go(_goal);
+            if(!finish) invalid_poses.push_back(_goal);
+            else{
+                double xspan = XMAX-XMIN;
+                double yspan = YMAX-YMIN;
+                int xpatch = (_goal.position.x - XMIN)*GRID/xspan;
+                int ypatch = (_goal.position.y - YMIN)*GRID/yspan;
+                patches[xpatch][ypatch]++;
 
-                    geometry_msgs::Point msg;
-                    msg.x = xpatch;
-                    msg.y = ypatch;
-                    gui_ack.publish(msg);
-                }
-                ros::spinOnce();
-                rate.sleep();
-            }while(!finish);
-            i = i + 1;
-        }while(i<16);
-    }
+                geometry_msgs::Point msg;
+                msg.x = xpatch;
+                msg.y = ypatch;
+                gui_ack.publish(msg);
+            }
+            ros::spinOnce();
+            rate.sleep();
+            ros::Duration(2).sleep();
+        }while(!finish);
+        i = i + 1;
+    }while(i<16);
+    
+    ros::spinOnce();
+    rate.sleep();
+    ros::Duration(2).sleep();
+
+    geometry_msgs::Pose readyforlanding;
+    readyforlanding.position.x = 20.0;
+    readyforlanding.position.y = 0.0;
+    readyforlanding.position.z = 5.0;
+    readyforlanding.orientation.w = 1;
+    go(readyforlanding);
+
+    ros::spinOnce();
+    rate.sleep();
+    ros::Duration(2).sleep();
 }
