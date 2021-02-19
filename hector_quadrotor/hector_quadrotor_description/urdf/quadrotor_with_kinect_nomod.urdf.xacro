@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<robot name="quadrotor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+   
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    
+    <!-- Included URDF Files -->
+    <xacro:include filename="$(find hector_quadrotor_description)/urdf/quadrotor_base.urdf.xacro" />
+    
+    <!-- Instantiate quadrotor_base_macro once (has no parameters atm) -->
+    <xacro:quadrotor_base_macro />
+    
+    <!-- Kinect -->
+    <xacro:include filename="$(find hector_sensors_description)/urdf/kinect_camera.urdf.xacro" />
+
+    <link name="movable_link">
+      <visual>
+        <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+        <geometry>
+          <cylinder radius="0.03" length="0.01" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin rpy="${M_PI/2} 0 0" xyz="0 0 0" />
+        <geometry>
+          <cylinder radius="0.03" length="0.01" />
+        </geometry>
+      </collision>
+      <!--<inertial>
+          <mass value="0.001"/>
+          <inertia ixx="0.000000325" ixy="0.0" ixz="0.0" iyy="0.00000005" iyz="0.0" izz="0.000000325"/>
+      </inertial>-->
+    </link>
+
+    <joint name="movable_camera_joint" type="revolute">
+      <origin xyz="0 0 -0.055" rpy="0.0 0.0 0.0" />
+      <parent link="fixedarm_link" />
+      <child link="movable_link"/>
+      <axis xyz="0 -1 0" />
+      <limit upper="0" lower="${-M_PI/2}" velocity="2.0" effort="2" />
+    </joint>
+
+    <!--<transmission name="movable_camera_joint_joint_transmission">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="movable_camera_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="movable_camera_joint_joint_motor">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+    <gazebo reference="movable_camera_joint">
+      <implicitSpringDamper>1</implicitSpringDamper>
+    </gazebo>-->
+
+    <!--<xacro:joint_standard_transmission name="movable_camera_joint" />-->
+
+    <xacro:kinect_camera name="camera" parent="movable_link">
+      <origin xyz="0.06 0.0 -0.03" rpy="0 0 0"/>
+    </xacro:kinect_camera>
+    
+</robot>
+  

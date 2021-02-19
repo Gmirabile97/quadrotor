@@ -29,6 +29,31 @@
       </collision>
     </link>
 
+    <link name="fixedarm_link">
+        <visual>
+          <origin rpy="0 0 0" xyz="0 0 -0.03" />
+          <geometry>
+            <cylinder radius="0.01" length="0.06"/>
+          </geometry>
+        </visual>
+        <collision>
+          <origin rpy="0 0 0" xyz="0 0 -0.03" />
+          <geometry>
+            <cylinder radius="0.01" length="0.06"/>
+          </geometry>
+        </collision>
+        <inertial>
+          <mass value="0.001"/>
+          <inertia ixx="0.000000325" ixy="0.0" ixz="0.0" iyy="0.000000325" iyz="0.0" izz="0.00000005"/>
+        </inertial>
+      </link>
+      
+      <joint name="fixedarm_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="fixedarm_link"/>
+        <origin xyz="0 0 -0.03" />
+      </joint>
+
     <!-- Sonar height sensor -->
     <xacro:sonar_sensor name="sonar" parent="base_link" ros_topic="sonar_height" update_rate="10" min_range="0.03" max_range="3.0" field_of_view="${40*pi/180}" ray_count="3">
       <origin xyz="-0.16 0.0 -0.012" rpy="0 ${90*pi/180} 0"/>

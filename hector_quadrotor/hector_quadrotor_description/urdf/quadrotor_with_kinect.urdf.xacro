@@ -12,9 +12,58 @@
     
     <!-- Kinect -->
     <xacro:include filename="$(find hector_sensors_description)/urdf/kinect_camera.urdf.xacro" />
-    <xacro:kinect_camera name="camera" parent="base_link">
-      <origin xyz="0.23 0.0 -0.1" rpy="0 0 0"/>
-    </xacro:kinect_camera>
+
     
+    <link name="movable_link">
+        <visual>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="0.01" radius="0.03" />
+            </geometry>
+        </visual>
+        <collision>
+            <origin rpy="1.5707963267948966 0 0" xyz="0 0 0" />
+            <geometry>
+                <cylinder length="0.01" radius="0.03" />
+            </geometry>
+        </collision> 
+        <inertial>
+            <mass value="0.1" />
+            <inertia ixx="0.03" iyy="0.03" izz="0.03" ixy="0.0" ixz="0.0" iyz="0.0" />
+        </inertial>
+    </link>
+
+    <joint name="movable_camera_joint" type="revolute">
+        <origin rpy="0.0 0.0 0.0" xyz="0 0 -0.055" />
+        <parent link="fixedarm_link" />
+        <child link="movable_link" />
+        <axis xyz="0 -1 0" />
+        <limit effort="2" lower="-1.5707963267948966" upper="0" velocity="2.0" />
+    </joint>
+
+    <xacro:kinect_camera name="camera" parent="movable_link">
+      <origin xyz="0.06 0.0 -0.03" rpy="0 0 0"/>
+    </xacro:kinect_camera>
+
+    <transmission name="trans_movable_camera_joint">
+        <type>transmission_interface/SimpleTransmission</type>
+        <joint name="movable_camera_joint">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+        </joint>
+        <actuator name="movable_camera_joint_motor">
+            <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+    </transmission>
+    
+
+    <!--<xacro:kinect_camera name="camera" parent="base_link">
+        <origin xyz="0.23 0.0 -0.1" rpy="0 0 0"/>
+    </xacro:kinect_camera>-->
+
+    <!--<gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/</robotNamespace>
+        </plugin>
+    </gazebo>-->
 </robot>
-  
