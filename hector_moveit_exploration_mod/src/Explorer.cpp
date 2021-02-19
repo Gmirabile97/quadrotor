@@ -129,90 +129,6 @@ double Quadrotor::countFreeVolume(const octomap::OcTree *octree) {
     return known*100.0/(float)(unknown+known);
 }
 
-
-void Quadrotor::findFrontier()
-{
-    ROS_INFO("Looking for frontiers");
-    moveit_msgs::GetPlanningScene srv;
-    srv.request.components.components = moveit_msgs::PlanningSceneComponents::OCTOMAP;
-    ros::spinOnce();
-    while(!frontiers.empty())
-        frontiers.pop();
-    if(planning_scene_service.call(srv)){
-        this->planning_scene->setPlanningSceneDiffMsg(srv.response.scene);
-        octomap_msgs::Octomap octomap = srv.response.scene.world.octomap.octomap;
-        octomap::OcTree* current_map = (octomap::OcTree*)octomap_msgs::msgToMap(octomap);
-        
-        double resolution = current_map->getResolution();
-        
-        std::vector<std::pair<double, geometry_msgs::Pose> > candidate_frontiers;
-        for(octomap::OcTree::leaf_iterator n = current_map->begin_leafs(current_map->getTreeDepth()); n != current_map->end_leafs(); ++n)
-        {
-            if(!current_map->isNodeOccupied(*n))
-            {
-                double x_cur = n.getX();
-                double y_cur = n.getY();
-                double z_cur = n.getZ();
-                
-                bool frontier = false;
-
-                // Check whether very close point is discovered previously
-                bool already_explored = false;
-                for(auto a : explored){
-                    if(fabs(x_cur - a.position.x) < 2.0 && fabs(y_cur - a.position.y) < 2.0 && fabs(z_cur - a.position.z) < 2.0){
-                        already_explored = true;
-                        break;
-                    }
-                }
-                // Reject the frontiers that are located in the patches who had many frontiers already discovered.
-                
-                if(x_cur < XMIN + resolution || x_cur > XMAX - resolution
-                || y_cur < YMIN + resolution || y_cur > YMAX - resolution
-                || z_cur < ZMIN + resolution || z_cur > ZMAX - resolution) continue;
-                double xspan = XMAX-XMIN;
-                double yspan = YMAX-YMIN;
-                int xpatch = (x_cur-XMIN)*GRID/xspan;
-                int ypatch = (y_cur-YMIN)*GRID/yspan;
-               if(already_explored || patches[xpatch][ypatch]>= PATCH_LIMIT)
-                    continue;
-                for (double x_cur_buf = x_cur - resolution; x_cur_buf < x_cur + resolution; x_cur_buf += resolution)
-                {   
-                    for (double y_cur_buf = y_cur - resolution; y_cur_buf < y_cur + resolution; y_cur_buf += resolution)
-                    {
-                        
-                        octomap::OcTreeNode *n_cur_frontier = current_map->search(x_cur_buf, y_cur_buf, z_cur);
-                        if(!n_cur_frontier)
-                        {
-                            frontier = true;
-                        }
-                    }
-                }
-                if(frontier){
-                    geometry_msgs::Pose p;
-                    p.position.x = x_cur;p.position.y = y_cur;p.position.z = z_cur;
-                    p.orientation.w = 1;
-                    double dist = sqrt(pow(p.position.x - odometry_information.position.x,2) + pow(p.position.y - odometry_information.position.y,2) + pow(p.position.z - odometry_information.position.z,2));
-                    if(dist > 2)
-                        candidate_frontiers.push_back({dist,p});
-                }
-            }
-        }
-        /*std::sort(candidate_frontiers.begin(),candidate_frontiers.end(), 
-            [](const DistancedPoint& x, const DistancedPoint& y){
-                return x.first > y.first;
-            });*/
-        std::vector<int> indices(candidate_frontiers.size());
-        if(candidate_frontiers.size() > 10){
-            for(int i=0;i<indices.size();i++)
-                indices[i] = i;
-            std::random_shuffle(indices.begin(),indices.end());
-            indices.erase(indices.begin()+10,indices.end()); 
-        }
-        for(int i=0;i<indices.size();i++)
-            frontiers.push(candidate_frontiers[i]);
-    }
-}
-
 bool Quadrotor::go(geometry_msgs::Pose& target_)
 {
     std::vector<double> target(7);
@@ -346,9 +262,15 @@ void Quadrotor::gotocenter(const std::vector<double> &p1, const std::vector<doub
     ROS_INFO("Center reach");
 }
 
+void Quadrotor::exploretree()
+{
+   
+    
+}
+
 std::vector<std::vector<double>> Quadrotor::findtree()
 {
-    std::vector<std::vector<double>> treepointmatrix {{{12,-12,7},{4,-12,7},{-4,-12,7},{-12,-12,7},{12,-4,7},{4,-4,7},{-4,-4,7},{-12,-4,7},{12,4,7},{4,4,7},{-4,4,7},{-12,4,7},{12,12,7},{4,12,7},{-4,12,7},{-12,12,7},}};
+    std::vector<std::vector<double>> treepointmatrix {{{12,-12,7},{4,-12,7},{-4,-12,7},{-12,-12,7},{12,-4,7},{4,-4,7},{-4,-4,7},{-12,-4,7},{12,4,7},{4,4,7},{-4,4,7},{-12,4,7},{12,12,7},{4,12,7},{-4,12,7},{-12,12,7}}};
     ROS_INFO("findtree successful");
     return treepointmatrix;
 }
@@ -368,11 +290,10 @@ void Quadrotor::run()
     rate.sleep();
     ros::Duration(2).sleep();
     
-    geometry_msgs::Pose taking_altitude;
-    taking_altitude.position.x = 20.0;
-    taking_altitude.position.y = 0.0;
+    while(!odom_received)
+        ;
+    geometry_msgs::Pose taking_altitude = odometry_information;
     taking_altitude.position.z = 5.0;
-    taking_altitude.orientation.w = 1;
     go(taking_altitude);
 
     ros::spinOnce();
@@ -435,6 +356,9 @@ void Quadrotor::run()
             ros::spinOnce();
             rate.sleep();
             ros::Duration(2).sleep();
+
+            exploretree();
+
         }while(!finish);
         i = i + 1;
     }while(i<16);
