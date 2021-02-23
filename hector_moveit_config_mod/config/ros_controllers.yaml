@@ -1,7 +1,7 @@
 # Simulation settings for using moveit_sim_controllers
 moveit_sim_hw_interface:
-  joint_model_group: DroneBody
-  joint_model_group_pose: home
+  joint_model_group: todo_group_name
+  joint_model_group_pose: todo_state_name
 # Settings for ros_control_boilerplate control loop
 generic_hw_control_loop:
   loop_hz: 300
@@ -19,7 +19,53 @@ joint_state_controller:
   publish_rate: 50
 controller_list:
   []
-movable_joint_camera_controller:
+multi_dof_joint_trajectory_action:
+  type: MultiDofFollowJointTrajectory
+  joints:
+    - virtual_joint/trans_x
+    - virtual_joint/trans_y
+    - virtual_joint/trans_z
+    - virtual_joint/rot_x
+    - virtual_joint/rot_y
+    - virtual_joint/rot_z
+    - virtual_joint/rot_w
+  gains:
+    virtual_joint/trans_x:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/trans_y:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/trans_z:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/rot_x:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/rot_y:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/rot_z:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+    virtual_joint/rot_w:
+      p: 100
+      d: 1
+      i: 1
+      i_clamp: 1
+movable_camera_joint_controller:
   type: position_controllers/JointPositionController
   joints:
     movable_camera_joint

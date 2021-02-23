@@ -40,7 +40,6 @@
 
   <!-- load URDF, SRDF and joint_limits configuration -->
   <!--<arg name="load_robot_description" default="true" />
-  
   <include file="$(find hector_moveit_config_mod)/launch/planning_context.launch">
     <arg name="load_robot_description" value="$(arg load_robot_description)" />
   </include>-->

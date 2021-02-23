@@ -6,6 +6,6 @@
 
   <!-- Load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-    output="screen" args="joint_state_controller movable_joint_camera_controller"/>
+    output="screen" args="joint_state_controller movable_camera_joint_controller"/>
 
 </launch>

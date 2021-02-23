@@ -10,3 +10,7 @@ controller_list:
       - virtual_joint/rot_y
       - virtual_joint/rot_z
       - virtual_joint/rot_w
+  - name: movable_camera_joint_controller
+    type: effort_controllers/JointPositionController
+    joints:
+      - movable_camera_joint
