@@ -17,3 +17,6 @@ hector_quadrotor/hector_quadrotor_gazebo/urdf/
 Il pacchetto generato dal MoveIt assistant è hector_moveit_config_mod che può essere modificato eseguendo setup_assistant.launch
 
 In hector_moveit_esploration_mod si trova l'esplorazione del drone con decollo, pianificazione, esecuzione, atterraggio
+
+Se vuoi generare un nuovo pacchetto con il setup_assistant, esegui roslaunch moveit_setup_assistant setup_assistant.launch, noi l'abbiamo fatto seguendo questo tutorial:
+https://www.wilselby.com/research/ros-integration/3d-mapping-navigation/
