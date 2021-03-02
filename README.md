@@ -1,4 +1,10 @@
 # quadrotor
+Vanno prima installati
+
+ros-noetic-moveit-ros-planning-interface
+ros-noetic-moveit-core
+
+
 I comandi da runnare sono questi due. Uno spawna mondo su gazebo, quadrotor e rviz. L'altro inizia il decollo e tutta la pianificazione con esecuzione.
 
 roslaunch hector_moveit_gazebo orchyard_navigation.launch
